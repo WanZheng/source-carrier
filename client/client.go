@@ -13,18 +13,23 @@ type SyncClient struct {
 	root     string
 	servAddr string
 	port     int
-	db       data.DB
-	c        *rpc.Client
-	w        watcher.FileWatcher
-	ignore   *gitignore.Gitignore
+
+	queue  chan data.Change
+	db     data.DB
+	c      *rpc.Client
+	w      watcher.FileWatcher
+	ignore *gitignore.Gitignore
 }
 
 func NewSyncClient(root, servAddr string, port int) *SyncClient {
-	return &SyncClient{
+	c := SyncClient{
 		root:     root,
 		port:     port,
 		servAddr: servAddr,
+		ignore:   gitignore.NewGitignore(root),
 	}
+	c.queue = make(chan data.Change, 1000)
+	return &c
 }
 
 func (c *SyncClient) Close() {
@@ -56,15 +61,21 @@ func (c *SyncClient) openDB() error {
 }
 
 func (c *SyncClient) updateIgnoreTable() error {
-	ign, err := gitignore.ScanGitignore(c.root)
-	c.ignore = ign
-	return err
+	return c.ignore.Update()
 }
 
 func (c *SyncClient) Run() error {
 	if err := c.updateIgnoreTable(); err != nil {
 		return err
 	}
-	go c.runFSWatcher()
+
+	go c.watchRouting()
+
+	if err := c.reScan(); err != nil {
+		return err
+	}
+
+	go c.dbRouting()
+
 	return c.runHttpServer()
 }

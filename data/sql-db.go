@@ -3,6 +3,7 @@ package data
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -63,6 +64,7 @@ func (db *SqlDB) CreateTable() error {
 }
 
 func (db *SqlDB) Write(ch Change) error {
+	log.Printf("Record change: %v %s", ch.Op, ch.Path)
 	tx, err := db.db.Begin()
 	if err != nil {
 		return err

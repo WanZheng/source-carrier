@@ -11,7 +11,7 @@ func (c *SyncClient) openFSWatcher() error {
 	return c.w.Open(c.root)
 }
 
-func (c *SyncClient) runFSWatcher() {
+func (c *SyncClient) watchRouting() {
 	for {
 		ch, err := c.w.Read()
 		if err != nil {
@@ -23,16 +23,22 @@ func (c *SyncClient) runFSWatcher() {
 			continue
 		}
 
-		log.Printf("Change: %v %s", ch.Op, ch.Path)
-		if err := c.db.Write(ch); err != nil {
-			log.Fatal(err)
-		}
+		c.queue <- ch
 
 		if filepath.Base(ch.Path) == ".gitignore" {
 			log.Print("update ignore patterns")
-			if err := c.updateIgnoreTable(); err != nil {
+			if err := c.ignore.Update(); err != nil {
 				log.Fatal(err)
 			}
+		}
+	}
+}
+
+func (c *SyncClient) dbRouting() {
+	for {
+		ch := <-c.queue
+		if err := c.db.Write(ch); err != nil {
+			log.Fatal(err)
 		}
 	}
 }

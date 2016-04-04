@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 const (
@@ -14,7 +15,26 @@ const (
 )
 
 type Gitignore struct {
-	m map[string][]Pattern
+	root string
+	lock sync.Mutex
+	m    map[string][]Pattern
+}
+
+func NewGitignore(root string) *Gitignore {
+	ign := Gitignore{root: root}
+	return &ign
+}
+
+func (ign *Gitignore) Update() error {
+	m, err := scanGitignore(ign.root)
+	if err != nil {
+		return err
+	}
+
+	ign.lock.Lock()
+	defer ign.lock.Unlock()
+	ign.m = m
+	return nil
 }
 
 func parseGitignore(r io.Reader) ([]Pattern, error) {
@@ -42,7 +62,7 @@ func parseGitignore(r io.Reader) ([]Pattern, error) {
 	return arr, nil
 }
 
-func ScanGitignore(root string) (*Gitignore, error) {
+func scanGitignore(root string) (map[string][]Pattern, error) {
 	m := make(map[string][]Pattern, 0)
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -86,10 +106,10 @@ func ScanGitignore(root string) (*Gitignore, error) {
 		}
 	*/
 
-	return &Gitignore{m}, err
+	return m, err
 }
 
-func (g *Gitignore) IsIgnored(path string) bool {
+func (ign *Gitignore) IsIgnored(path string) bool {
 	// XXX: never ignore the root path
 	if len(path) <= 0 {
 		return false
@@ -102,6 +122,9 @@ func (g *Gitignore) IsIgnored(path string) bool {
 		return true
 	}
 
+	ign.lock.Lock()
+	defer ign.lock.Unlock()
+
 	prefix := "/"
 	for i := 0; i < len(fields); i++ {
 		// XXX Always ignore .git directory
@@ -113,7 +136,7 @@ func (g *Gitignore) IsIgnored(path string) bool {
 			prefix = prefix + fields[i-1] + "/"
 		}
 
-		patterns := g.m[prefix]
+		patterns := ign.m[prefix]
 		if patterns == nil {
 			continue
 		}
