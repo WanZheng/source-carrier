@@ -1,4 +1,4 @@
-package file_watcher
+package watcher
 
 import (
 	"bufio"
@@ -39,7 +39,7 @@ func (w *FSWatcher) Open(path string) error {
 	}
 	w.root = root
 
-	w.cmd = exec.Command("fswatch", "-e", "\\.git", w.root)
+	w.cmd = exec.Command("fswatch", "-e", "\\.git\\/", w.root)
 	go func() {
 		out, err := w.cmd.StdoutPipe()
 		if err != nil {

@@ -1,10 +1,12 @@
 package client
 
 import (
+	"log"
 	"net/rpc"
 	"path/filepath"
 	"syncfile/data"
-	"syncfile/file-watcher"
+	"syncfile/gitignore"
+	"syncfile/watcher"
 )
 
 type SyncClient struct {
@@ -13,7 +15,8 @@ type SyncClient struct {
 	port     int
 	db       data.DB
 	c        *rpc.Client
-	w        file_watcher.FileWatcher
+	w        watcher.FileWatcher
+	ignore   *gitignore.Gitignore
 }
 
 func NewSyncClient(root, servAddr string, port int) *SyncClient {
@@ -35,7 +38,7 @@ func (c *SyncClient) Open() error {
 	}
 
 	if err := c.openRpc(); err != nil {
-		return err
+		log.Print("[Warning] failed to connect to server: ", err)
 	}
 
 	if err := c.openFSWatcher(); err != nil {
@@ -52,7 +55,16 @@ func (c *SyncClient) openDB() error {
 	return err
 }
 
+func (c *SyncClient) updateIgnoreTable() error {
+	ign, err := gitignore.ScanGitignore(c.root)
+	c.ignore = ign
+	return err
+}
+
 func (c *SyncClient) Run() error {
+	if err := c.updateIgnoreTable(); err != nil {
+		return err
+	}
 	go c.runFSWatcher()
 	return c.runHttpServer()
 }

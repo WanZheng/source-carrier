@@ -19,6 +19,12 @@ func (c *SyncClient) openRpc() error {
 }
 
 func (c *SyncClient) sync() error {
+	if c.c == nil {
+		if err := c.openRpc(); err != nil {
+			return err
+		}
+	}
+
 	var seq int64
 	if err := c.c.Call("Sync.Seq", 0, &seq); err != nil {
 		return err

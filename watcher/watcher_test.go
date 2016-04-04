@@ -1,4 +1,4 @@
-package file_watcher
+package watcher
 
 import (
 	"log"
@@ -17,7 +17,7 @@ func TestFSWatcher(t *testing.T) {
 		if err != nil {
 			t.Error("Failed to read change:", err)
 		}
-		t.Log("change: ", *ch)
+		t.Log("change: ", ch)
 	}
 	w.Close()
 }
