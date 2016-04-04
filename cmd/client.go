@@ -22,6 +22,7 @@ import (
 	"syncfile/client"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // fs-watcherCmd represents the fs-watcher command
@@ -37,32 +38,20 @@ to quickly create a Cobra application.`,
 	Run: watcher,
 }
 
-var (
-	root       string
-	servAddr   string
-	clientPort int
-)
-
 func init() {
 	RootCmd.AddCommand(clientCmd)
 
-	// Here you will define your flags and configuration settings.
+	clientCmd.Flags().StringP("server", "s", "", "Server address")
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// clientCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	clientCmd.Flags().StringVarP(&root, "root", "r", "", "Root path")
-	clientCmd.Flags().StringVarP(&servAddr, "server", "s", "", "Server address")
-	clientCmd.Flags().IntVarP(&clientPort, "port", "p", 6000, "Local port")
+	viper.BindPFlags(clientCmd.Flags())
 }
 
 func watcher(cmd *cobra.Command, args []string) {
+	servAddr := viper.GetString("server")
+
 	log.Print("root: ", root)
 	log.Print("server: ", servAddr)
-	log.Print("port: ", clientPort)
+	log.Print("http_port: ", httpPort)
 
 	if len(root) <= 0 || len(servAddr) <= 0 {
 		fmt.Println(cmd.Flags().FlagUsages())
@@ -70,13 +59,13 @@ func watcher(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if err := runClient(root, servAddr, clientPort); err != nil {
+	if err := runClient(root, servAddr, httpPort); err != nil {
 		log.Fatal("Failed to start sync client: ", err)
 		os.Exit(1)
 	}
 }
 
-func runClient(root, servAddr string, localPort int) error {
+func runClient(root, servAddr string, httpPort int) error {
 	info, err := os.Stat(root)
 	if err != nil {
 		return err
@@ -85,7 +74,7 @@ func runClient(root, servAddr string, localPort int) error {
 		return errors.New(fmt.Sprintf("'%s' is not a directory", root))
 	}
 
-	c := client.NewSyncClient(root, servAddr, clientPort)
+	c := client.NewSyncClient(root, servAddr, httpPort)
 	if err := c.Open(); err != nil {
 		return err
 	}
