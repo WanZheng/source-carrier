@@ -22,12 +22,33 @@ to quickly create a Cobra application.`,
 	Run: sync,
 }
 
+var scanCmd = &cobra.Command{
+	Use:   "scan",
+	Short: "A brief description of your command",
+	Long: `A longer description that spans multiple lines and likely contains examples
+and usage of using your command. For example:
+
+Cobra is a CLI library for Go that empowers applications.
+This application is a tool to generate the needed files
+to quickly create a Cobra application.`,
+	Run: scan,
+}
+
 func init() {
 	clientCmd.AddCommand(syncCmd)
+	clientCmd.AddCommand(scanCmd)
 }
 
 func sync(cmd *cobra.Command, args []string) {
-	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/sync", httpPort))
+	httpRequest(cmd, args, "sync")
+}
+
+func scan(cmd *cobra.Command, args []string) {
+	httpRequest(cmd, args, "scan")
+}
+
+func httpRequest(cmd *cobra.Command, args []string, request string) {
+	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/%s", httpPort, request))
 	if err != nil {
 		log.Fatal(err)
 	}

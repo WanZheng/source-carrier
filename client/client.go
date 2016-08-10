@@ -46,9 +46,11 @@ func (c *SyncClient) Open() error {
 		log.Print("[Warning] failed to connect to server: ", err)
 	}
 
-	if err := c.openFSWatcher(); err != nil {
-		return err
-	}
+	/*
+		if err := c.openFSWatcher(); err != nil {
+			return err
+		}
+	*/
 
 	return nil
 }
@@ -69,7 +71,7 @@ func (c *SyncClient) Run() error {
 		return err
 	}
 
-	go c.watchRouting()
+	// go c.watchRouting()
 
 	if err := c.reScan(); err != nil {
 		return err

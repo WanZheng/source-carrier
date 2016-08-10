@@ -78,7 +78,7 @@ func (db *SqlDB) Write(ch Change) error {
 		return err
 	}
 
-	if ch.Seq == 0 {
+	if ch.Seq <= 0 {
 		_, err = tx.Exec(
 			fmt.Sprintf("INSERT INTO %s (%s,%s,%s,%s) VALUES (?,?,?,?)", TABLE_NAME, COL_PATH, COL_OP, COL_SIZE, COL_MTIME),
 			ch.Path, ch.Op, ch.Size, ch.Mtime)

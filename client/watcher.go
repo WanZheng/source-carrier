@@ -15,7 +15,7 @@ func (c *SyncClient) watchRouting() {
 	for {
 		ch, err := c.w.Read()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("failed to read change:", ch, err)
 		}
 
 		if c.ignore.IsIgnored(ch.Path) {
@@ -28,7 +28,7 @@ func (c *SyncClient) watchRouting() {
 		if filepath.Base(ch.Path) == ".gitignore" {
 			log.Print("update ignore patterns")
 			if err := c.ignore.Update(); err != nil {
-				log.Fatal(err)
+				log.Fatal("failed to update ignore:", err)
 			}
 		}
 	}
@@ -38,7 +38,7 @@ func (c *SyncClient) dbRouting() {
 	for {
 		ch := <-c.queue
 		if err := c.db.Write(ch); err != nil {
-			log.Fatal(err)
+			log.Fatal("failed to write db:", err)
 		}
 	}
 }

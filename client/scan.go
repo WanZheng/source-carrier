@@ -68,6 +68,7 @@ func (c *SyncClient) reScan() error {
 			continue
 		}
 		ch.Op = data.DEL
+		ch.Seq = -1
 		updated = append(updated, ch)
 	}
 

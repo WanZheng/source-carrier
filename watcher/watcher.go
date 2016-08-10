@@ -75,6 +75,7 @@ func (w *FSWatcher) Read() (data.Change, error) {
 		if !ok {
 			return data.Change{}, nil
 		}
+		log.Print("file change: ", f)
 		rel, err := filepath.Rel(w.root, f)
 		if err != nil {
 			return data.Change{}, err

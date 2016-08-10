@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -66,6 +67,10 @@ func scanGitignore(root string) (map[string][]Pattern, error) {
 	m := make(map[string][]Pattern, 0)
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			if os.IsNotExist(err) {
+				return nil
+			}
+			log.Print("failed to walk:", err)
 			return err
 		}
 		if info.IsDir() {
@@ -77,12 +82,14 @@ func scanGitignore(root string) (map[string][]Pattern, error) {
 
 		file, err := os.OpenFile(path, os.O_RDONLY, 0)
 		if err != nil {
+			log.Print("failed to open file:", err)
 			return err
 		}
 		defer file.Close()
 
 		patterns, err := parseGitignore(file)
 		if err != nil {
+			log.Print("failed to parse ignore file:", err)
 			return err
 		}
 
